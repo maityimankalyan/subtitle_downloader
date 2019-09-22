@@ -14,7 +14,7 @@ import subprocess
 import subliminal
 from babelfish import Language
 import shlex
-import subliminal_process
+# import subliminal_process
 # supported video extensions
 VIDEO_EXTENSIONS = ('.3g2', '.3gp', '.3gp2', '.3gpp', '.60d', '.ajp', '.asf', '.asx', '.avchd', '.avi', '.bik',
                     '.bix', '.box', '.cam', '.dat', '.divx', '.dmf', '.dv', '.dvr-ms', '.evo', '.flc', '.fli',
@@ -25,7 +25,7 @@ VIDEO_EXTENSIONS = ('.3g2', '.3gp', '.3gp2', '.3gpp', '.60d', '.ajp', '.asf', '.
                     '.vob', '.vro', '.wm', '.wmv', '.wmx', '.wrap', '.wvx', '.wx', '.x264', '.xvid')
 
 # supported output subtitle extensions
-SUBTITLE_EXT = ('.sub', '.smi', '.txt', '.ssa', '.ass', '.mpl')
+SUBTITLE_EXT = ('.sub', '.smi', '.txt', '.ssa', '.ass', '.mpl', '.srt')
 
 
 def download_subtitles(args):
@@ -41,22 +41,26 @@ def download_subtitles(args):
     path = ' '.join(args.directory)
     print("[User] checking files in {} ...".format(path))
     videos = subliminal.scan_videos(path)  #TODO: download new video's subtitles , age=timedelta(weeks=2)
-    if args.languages == 'en':
-        language_dict ={Language('en')}
+    if args.language == 'en':
+        language_dict ={Language('eng')}
     elif args.language == 'fr':
-        language_dict ={Language('fr')}
+        language_dict ={Language('fra')}
     else:
         language_dict = {Language('eng'), Language('fra')}
     subtitles = subliminal.download_best_subtitles(videos, language_dict)
     for v in videos:
         subliminal.save_subtitles(v, subtitles[v])
 
-    # TODO: removing en/fr from the subtitle name
-    for file in os.listdir( ):
+    # removing en/fr from the subtitle name
+    for file in os.listdir(path):
         for ext in SUBTITLE_EXT:
-            lan_ext = '.{}{}'.format(, ext)
+            lan_ext = '.{}{}'.format('en', ext)
+            # print('file: ', file, '\t\t lan_ext: ', lan_ext)
+            file_path = os.path.join(path, file)
+            new_file_path = os.path.join(path, file.replace(lan_ext , ext))
+            # print('file_path: ', file_path, '\t\t new_file_path: ', new_file_path)
             if file.endswith(lan_ext):
-                os.rename(file , file.replace(lan_ext , ext))
+                os.rename(file_path, new_file_path)
     return 1
 
 
