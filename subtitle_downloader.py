@@ -12,8 +12,9 @@ from argparse import ArgumentParser
 import os
 import subprocess
 import subliminal
+from babelfish import Language
 import shlex
-
+import subliminal_process
 # supported video extensions
 VIDEO_EXTENSIONS = ('.3g2', '.3gp', '.3gp2', '.3gpp', '.60d', '.ajp', '.asf', '.asx', '.avchd', '.avi', '.bik',
                     '.bix', '.box', '.cam', '.dat', '.divx', '.dmf', '.dv', '.dvr-ms', '.evo', '.flc', '.fli',
@@ -36,24 +37,24 @@ def download_subtitles(args):
     """
 
     # collecting all the video file names in the targeted directory
-    print("[User] checking files in - {}".format(args.directory))
-    all_files = [os.path.join(args.directory, each_file) for each_file in os.listdir(args.directory)]
-    all_video_files = []
-    for each_ext in VIDEO_EXTENSIONS:
-        temp_video_files = [each_file for each_file in all_files if each_file.endswith(each_ext)]
-        all_video_files += temp_video_files
-    print("[User] all video files are: {}".format('\n'.join(all_video_files)))
-
-    # for each video file creating & running subliminal command
-    for each_video in all_video_files:
-        cmd = 'subliminal download -l {} "{}"'.format(args.language, each_video)
-        print("[User] Downloading subtitles for: {}".format(each_video))
-        p = subprocess.Popen(cmd, shell=True)
+    language_dict = {}
+    path = ' '.join(args.directory)
+    print("[User] checking files in {} ...".format(path))
+    videos = subliminal.scan_videos(path)  #TODO: download new video's subtitles , age=timedelta(weeks=2)
+    if args.languages == 'en':
+        language_dict ={Language('en')}
+    elif args.language == 'fr':
+        language_dict ={Language('fr')}
+    else:
+        language_dict = {Language('eng'), Language('fra')}
+    subtitles = subliminal.download_best_subtitles(videos, language_dict)
+    for v in videos:
+        subliminal.save_subtitles(v, subtitles[v])
 
     # TODO: removing en/fr from the subtitle name
     for file in os.listdir( ):
         for ext in SUBTITLE_EXT:
-            lan_ext = '.{}{}'.format(args.language, ext)
+            lan_ext = '.{}{}'.format(, ext)
             if file.endswith(lan_ext):
                 os.rename(file , file.replace(lan_ext , ext))
     return 1
@@ -62,9 +63,9 @@ def download_subtitles(args):
 if __name__ == "__main__":
     # command line argument persing
     parser = ArgumentParser()
-    parser.add_argument("-d", "--directory", dest="directory",
+    parser.add_argument("-d", "--directory", dest="directory", nargs='+',
                         help='example: -d <directory path>. default is current directory', type=str, default=os.getcwd())
     parser.add_argument("-l", "--language", dest="language",
-                        help="example: -l <en|fr>. default is English", type=str, default='en')
+                        help="example: -l <en_fr or fr>. default is English only", type=str, default='en')
     args = parser.parse_args()
     download_subtitles(args)
